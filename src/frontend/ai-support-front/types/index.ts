@@ -9,4 +9,5 @@ export type Ticket = {
     priority: Priority;
     tags?: string[];
     createdAt: string; // ISO
+    generatedAnswer: string;
 };

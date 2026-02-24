@@ -6,16 +6,20 @@ import { getTickets, updateTicket, deleteTicket } from '../lib/api';
 
 type Props = {
     onSelect?: (t: Ticket) => void;
+    refreshKey?: number;
 };
 
-export default function TicketTable({ onSelect }: Props) {
+export default function TicketTable({ refreshKey }: Props) {
     const [items, setItems] = useState<Ticket[]>([]);
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+
+    // Состояние для редактирования ответа
+    const [editAnswer, setEditAnswer] = useState('');
 
     useEffect(() => {
         let mounted = true;
-
         const load = async () => {
             setLoading(true);
             const data = await getTickets();
@@ -23,111 +27,148 @@ export default function TicketTable({ onSelect }: Props) {
             setItems(data);
             setLoading(false);
         };
-
         load();
-
-        return () => {
-            mounted = false;
-        };
-    }, []);
+        return () => { mounted = false; };
+    }, [refreshKey]);
 
     const filtered = useMemo(() => {
-        if (!q.trim()) return items;
         const s = q.toLowerCase();
-        return items.filter(
-            (t) =>
-                t.subject.toLowerCase().includes(s) ||
-                t.description.toLowerCase().includes(s) ||
-                (t.tags || []).some((tag) => tag.toLowerCase().includes(s))
+        return items.filter(t =>
+            t.subject.toLowerCase().includes(s) ||
+            (t.tags || []).some(tag => tag.toLowerCase().includes(s))
         );
     }, [items, q]);
 
-    const markResolved = async (id: string) => {
-        const updated = await updateTicket(id, { status: 'resolved' });
-        if (!updated) return;
-        setItems((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    const handleUpdateAnswer = async (id: string) => {
+        const updated = await updateTicket(id, { generatedAnswer: editAnswer, status: 'resolved' });
+        if (updated) {
+            setItems(prev => prev.map(p => p.id === id ? updated : p));
+            setSelectedId(null);
+        }
     };
 
-    const remove = async (id: string) => {
-        const ok = await deleteTicket(id);
-        if (ok) setItems((p) => p.filter((x) => x.id !== id));
+    const getPriorityStyle = (p: string) => {
+        switch (p) {
+            case 'high': return 'bg-red-50 text-red-700 border-red-100';
+            case 'medium': return 'bg-amber-50 text-amber-700 border-amber-100';
+            default: return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+        }
     };
 
     return (
-        <div className="bg-white rounded shadow p-4">
-            <div className="flex items-center gap-2 mb-3">
-                <input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="Поиск по теме/описанию/тегам"
-                    className="flex-1 p-2 border rounded"
-                />
-                <div className="text-sm text-gray-500">
-                    {loading ? 'Загрузка...' : `${filtered.length} записей`}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="relative flex-1 max-w-md">
+                    <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </span>
+                    <input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="Поиск тикетов..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+                    />
+                </div>
+                <div className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                    {loading ? 'Загрузка...' : `${filtered.length} тикетов`}
                 </div>
             </div>
 
-            <table className="w-full table-auto">
-                <thead>
-                    <tr className="text-left text-sm text-gray-600">
-                        <th className="p-2">Тема</th>
-                        <th className="p-2">Приоритет</th>
-                        <th className="p-2">Статус</th>
-                        <th className="p-2">Дата</th>
-                        <th className="p-2">Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filtered.map((t) => (
-                        <tr key={t.id} className="border-t hover:bg-gray-50">
-                            <td className="p-2 align-top">
-                                <div className="font-medium">{t.subject}</div>
-                                <div className="text-xs text-gray-600">
-                                    {t.description.slice(0, 120)}
-                                    {t.description.length > 120 ? '…' : ''}
-                                </div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                    {(t.tags || []).join(', ')}
-                                </div>
-                            </td>
-                            <td className="p-2 align-top">{t.priority}</td>
-                            <td className="p-2 align-top">{t.status}</td>
-                            <td className="p-2 align-top">
-                                {new Date(t.createdAt).toLocaleString()}
-                            </td>
-                            <td className="p-2 align-top">
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => onSelect?.(t)}
-                                        className="px-2 py-1 border rounded text-sm"
-                                    >
-                                        Открыть
-                                    </button>
-                                    <button
-                                        onClick={() => markResolved(t.id)}
-                                        className="px-2 py-1 bg-green-600 text-white rounded text-sm"
-                                    >
-                                        Решить
-                                    </button>
-                                    <button
-                                        onClick={() => remove(t.id)}
-                                        className="px-2 py-1 bg-red-600 text-white rounded text-sm"
-                                    >
-                                        Удалить
-                                    </button>
-                                </div>
-                            </td>
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-gray-50/50 text-[11px] uppercase tracking-widest text-gray-500 font-bold">
+                            <th className="px-6 py-4">Клиент и Тема</th>
+                            <th className="px-6 py-4">Приоритет</th>
+                            <th className="px-6 py-4">Статус</th>
+                            <th className="px-6 py-4 text-right">Действия</th>
                         </tr>
-                    ))}
-                    {filtered.length === 0 && !loading && (
-                        <tr>
-                            <td colSpan={5} className="p-6 text-center text-gray-500">
-                                Нет тикетов
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                        {filtered.map((t) => {
+                            const isSelected = selectedId === t.id;
+                            return (
+                                <React.Fragment key={t.id}>
+                                    <tr
+                                        onClick={() => {
+                                            setSelectedId(isSelected ? null : t.id);
+                                            setEditAnswer(t.generatedAnswer || '');
+                                        }}
+                                        className={`group hover:bg-blue-50/30 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/50' : ''}`}
+                                    >
+                                        <td className="px-6 py-4">
+                                            <div className="font-semibold text-gray-900 text-sm">{t.subject}</div>
+                                            <div className="text-xs text-gray-500 truncate max-w-[300px] mt-0.5">{t.description}</div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${getPriorityStyle(t.priority)}`}>
+                                                {t.priority}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${t.status === 'new' ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'}`} />
+                                                <span className="text-sm text-gray-600 capitalize">{t.status}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right text-gray-400 group-hover:text-blue-600 transition-colors">
+                                            <svg className={`w-5 h-5 ml-auto transform transition-transform ${isSelected ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                        </td>
+                                    </tr>
+
+                                    {isSelected && (
+                                        <tr className="bg-gray-50/30">
+                                            <td colSpan={4} className="px-8 py-6">
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                    <div>
+                                                        <h4 className="text-[11px] uppercase font-bold text-gray-400 mb-3 tracking-widest">Описание проблемы</h4>
+                                                        <p className="text-sm text-gray-700 leading-relaxed bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                                            {t.description || 'Нет описания'}
+                                                        </p>
+                                                        <div className="mt-4 flex flex-wrap gap-2">
+                                                            {t.tags?.map(tag => (
+                                                                <span key={tag} className="text-[10px] bg-white px-2 py-1 rounded border border-gray-200 text-gray-500">#{tag}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-col">
+                                                        <h4 className="text-[11px] uppercase font-bold text-gray-400 mb-3 tracking-widest">AI Ответ (можно редактировать)</h4>
+                                                        <textarea
+                                                            value={editAnswer}
+                                                            onChange={(e) => setEditAnswer(e.target.value)}
+                                                            className="flex-1 min-h-[120px] p-4 text-sm text-gray-800 bg-white border border-blue-100 rounded-xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 outline-none transition-all shadow-sm"
+                                                        />
+                                                        <div className="flex gap-3 mt-4">
+                                                            <button
+                                                                onClick={() => handleUpdateAnswer(t.id)}
+                                                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/20"
+                                                            >
+                                                                Отправить клиенту
+                                                            </button>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (confirm('Удалить тикет?')) {
+                                                                        await deleteTicket(t.id);
+                                                                        setItems(p => p.filter(x => x.id !== t.id));
+                                                                    }
+                                                                }}
+                                                                className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-sm font-medium transition-colors"
+                                                            >
+                                                                Удалить
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
