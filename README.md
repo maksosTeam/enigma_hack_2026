@@ -66,6 +66,7 @@
 
 ### Схема
 
+```mermaid
 flowchart TD
     A[Почтовый ящик клиента] --> B[Модуль работы с почтой (получение писем)]
     B --> C[Брокер сообщений]
@@ -75,15 +76,6 @@ flowchart TD
     
     D --> G[База знаний / история обращений: PostgreSQL + FAQ]
     G --> H[База данных: входящие письма, решения, статистика]
-
-    style A fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
-    style B fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
-    style C fill:#ede9fe,stroke:#8b5cf6,stroke-width:2px
-    style D fill:#dcfce7,stroke:#16a34a,stroke-width:2px
-    style E fill:#fee2e2,stroke:#ef4444,stroke-width:2px
-    style F fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
-    style G fill:#f5f3ff,stroke:#7c3aed,stroke-width:2px
-    style H fill:#fef2f2,stroke:#b91c1c,stroke-width:2px
 
 ---
 
