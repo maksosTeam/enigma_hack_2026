@@ -76,13 +76,13 @@ flowchart TD
     D --> G[База знаний]
     G --> H[База данных]
 
-    style A fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
-    style C fill:#ede9fe,stroke:#8b5cf6,stroke-width:2px
-    style D fill:#dcfce7,stroke:#16a34a,stroke-width:2px
-    style E fill:#fee2e2,stroke:#ef4444,stroke-width:2px
-    style F fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
-    style G fill:#f5f3ff,stroke:#7c3aed,stroke-width:2px
-    style H fill:#fef2f2,stroke:#b91c1c,stroke-width:2px
+    style A fill:#E3F2FD,stroke:#1E88E5,stroke-width:1.5px,color:#0D47A1
+    style C fill:#EDE7F6,stroke:#5E35B1,stroke-width:1.5px,color:#311B92
+    style D fill:#E8F5E9,stroke:#2E7D32,stroke-width:1.5px,color:#1B5E20
+    style E fill:#FFF3E0,stroke:#EF6C00,stroke-width:1.5px,color:#E65100
+    style F fill:#ECEFF1,stroke:#455A64,stroke-width:1.5px,color:#263238
+    style G fill:#F3E5F5,stroke:#8E24AA,stroke-width:1.5px,color:#4A148C
+    style H fill:#FBE9E7,stroke:#D84315,stroke-width:1.5px,color:#BF360C
 ```
 
 ---
