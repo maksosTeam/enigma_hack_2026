@@ -68,14 +68,14 @@
 
 ```mermaid
 flowchart TD
-    A[Почтовый ящик] --> B[Модуль_почты]
-    B --> C[Брокер_сообщений]
-    C --> D[AI_агент]
-    D --> E[Веб_интерфейс_оператора]
-    E --> F[Модуль_отправки]
+    A[Почтовый ящик] --> B[Получение почты]
+    B --> C[Брокер сообщений]
+    C --> D[AI агент]
+    D --> E[Веб интерфейс оператора]
+    E --> F[Отправка почты]
 
-    D --> G[База_знаний]
-    G --> H[База_данных]
+    D --> G[База знаний]
+    G --> H[База данных]
 
     style A fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
     style B fill:#dbeafe,stroke:#3b82f6,stroke-width:2px
@@ -85,6 +85,7 @@ flowchart TD
     style F fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
     style G fill:#f5f3ff,stroke:#7c3aed,stroke-width:2px
     style H fill:#fef2f2,stroke:#b91c1c,stroke-width:2px
+```
 
 ---
 
