@@ -1,15 +1,15 @@
 from fastapi import FastAPI
 
-from app.api.routes import auth
+from app.api.routes import auth, users
 
 from app.db.base import Base
 
 from app.db.session import engine
 
-app = FastAPI(title="FastAPI SOLID Project")
+app = FastAPI(title="Shibabs :'(s")
 
 app.include_router(auth.router)
-
+app.include_router(users.router)
 
 @app.on_event("startup")
 async def on_startup():
