@@ -10,10 +10,12 @@ app = FastAPI(title="FastAPI SOLID Project")
 
 app.include_router(auth.router)
 
+
 @app.on_event("startup")
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
 
 @app.get("/")
 async def root():

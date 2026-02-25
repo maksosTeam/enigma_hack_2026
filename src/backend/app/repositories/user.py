@@ -8,6 +8,7 @@ from app.schemas.user import UserCreate
 
 from app.core.security import get_password_hash
 
+
 class UserRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -18,8 +19,7 @@ class UserRepository:
 
     async def create(self, user_in: UserCreate) -> User:
         db_user = User(
-            email=user_in.email,
-            hashed_password=get_password_hash(user_in.password)
+            email=user_in.email, hashed_password=get_password_hash(user_in.password)
         )
         self.session.add(db_user)
         await self.session.commit()

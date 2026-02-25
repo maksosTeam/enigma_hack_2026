@@ -4,6 +4,7 @@ from app.core.security import verify_password, create_access_token
 from app.core.config import settings
 from datetime import timedelta
 
+
 class AuthService:
     def __init__(self, user_repo: UserRepository):
         self.user_repo = user_repo
@@ -12,7 +13,7 @@ class AuthService:
         user = await self.user_repo.get_by_email(login_data.email)
         if not user or not verify_password(login_data.password, user.hashed_password):
             raise ValueError("Incorrect email or password")
-        
+
         if not user.is_active:
             raise ValueError("Inactive user")
 

@@ -8,10 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/auth", tags=["Authorization"])
 
+
 @router.post("/login", response_model=Token)
 async def login(
-    login_data: UserLogin,
-    auth_service: AuthService = Depends(get_auth_service)
+    login_data: UserLogin, auth_service: AuthService = Depends(get_auth_service)
 ):
     try:
         return await auth_service.authenticate_user(login_data)
@@ -22,15 +22,16 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+
 @router.post("/register", response_model=UserResponse)
 async def register(
     user_in: UserCreate,
     session: AsyncSession = Depends(get_db_session),
-    user_repo: UserRepository = Depends(get_user_repo)
+    user_repo: UserRepository = Depends(get_user_repo),
 ):
     existing = await user_repo.get_by_email(user_in.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     user = await user_repo.create(user_in)
     return user
