@@ -6,7 +6,7 @@ from app.db.base import Base
 
 from app.db.session import engine
 
-app = FastAPI(title="Shibabs :'(s")
+app = FastAPI(title="MaksosTeam Project API")
 
 app.include_router(auth.router)
 app.include_router(users.router)
