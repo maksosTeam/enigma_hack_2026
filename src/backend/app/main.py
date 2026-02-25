@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import auth, users
+from app.api.routes import auth, users, tickets
 
 from app.db.base import Base
 
@@ -10,6 +10,7 @@ app = FastAPI(title="Shibabs :'(s")
 
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(tickets.router)
 
 @app.on_event("startup")
 async def on_startup():

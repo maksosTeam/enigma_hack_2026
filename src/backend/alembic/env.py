@@ -7,6 +7,11 @@ from alembic import context
 
 from app.core.config import settings
 
+from app.db.base import Base
+
+from app.models.user import User
+from app.models.ticket import Ticket
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -20,7 +25,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -57,7 +62,6 @@ def run_migrations_online() -> None:
     from sqlalchemy.ext.asyncio import create_async_engine
     from sqlalchemy import create_engine
 
-    # Используй синхронный URL для Alembic
     sync_url = settings.DATABASE_URL.replace("postgresql+asyncpg", "postgresql")
 
     connectable = create_engine(sync_url)
@@ -65,7 +69,7 @@ def run_migrations_online() -> None:
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
-            target_metadata=target_metadata,  # Не забудь указать metadata твоих моделей
+            target_metadata=target_metadata, 
             compare_type=True,
         )
 
