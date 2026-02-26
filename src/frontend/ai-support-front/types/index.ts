@@ -1,13 +1,13 @@
-export type Priority = 'low' | 'medium' | 'high';
-export type TicketStatus = 'new' | 'open' | 'in_progress' | 'resolved' | 'closed';
+export type Priority = 'low' | 'middle' | 'high';
 
 export type Ticket = {
-    id: string;
-    subject: string;
+    id: number;
+    topic: string;
     description: string;
-    status: TicketStatus;
     priority: Priority;
-    tags?: string[];
-    createdAt: string; // ISO
-    generatedAnswer: string;
+    awaits_response: boolean;
+    created_at: string; // ISO
+    // fields returned only for admin/operator
+    user_email?: string;
+    user_role?: string;
 };

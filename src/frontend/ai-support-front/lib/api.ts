@@ -1,6 +1,5 @@
 import { Ticket } from '../types';
 
-const STORAGE_KEY = 'support_tickets_v1';
 const AUTH_STORAGE_KEY = 'support_ai_token';
 
 export type Token = {
@@ -65,55 +64,54 @@ export function fetchWithAuth(input: RequestInfo, init?: RequestInit) {
     return fetch(input, { ...init, headers });
 }
 
-function readStore(): Ticket[] {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        return JSON.parse(raw) as Ticket[];
-    } catch (e) {
-        console.error('readStore error', e);
-        return [];
-    }
-}
-
-function writeStore(items: Ticket[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
-
 export async function getTickets(): Promise<Ticket[]> {
-    // имитация задержки
-    await new Promise((r) => setTimeout(r, 120));
-    return readStore().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    // choose endpoint based on role stored in token
+    const token = readToken();
+    let url = `${getApiBase()}/tickets`;
+    if (token && token.user_role && (token.user_role === 'admin' || token.user_role === 'operator')) {
+        url = `${getApiBase()}/tickets/all`;
+    }
+    const res = await fetchWithAuth(url);
+    if (!res.ok) {
+        throw new Error('Failed to fetch tickets');
+    }
+    const data = await res.json();
+    // response may be { tickets: [...] }
+    return data.tickets as Ticket[];
 }
 
-export async function createTicket(payload: Omit<Ticket, 'id' | 'createdAt'>): Promise<Ticket> {
-    await new Promise((r) => setTimeout(r, 120));
-    const items = readStore();
-    const t: Ticket = {
-        ...payload,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-    };
-    items.push(t);
-    writeStore(items);
-    return t;
+export async function createTicket(payload: { topic: string; description: string; priority: string; }): Promise<Ticket> {
+    const url = `${getApiBase()}/tickets`;
+    const res = await fetchWithAuth(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Failed to create ticket');
+    }
+    const data = await res.json();
+    return data as Ticket;
 }
 
-export async function updateTicket(id: string, patch: Partial<Ticket>): Promise<Ticket | null> {
-    await new Promise((r) => setTimeout(r, 120));
-    const items = readStore();
-    const idx = items.findIndex((x) => x.id === id);
-    if (idx === -1) return null;
-    items[idx] = { ...items[idx], ...patch };
-    writeStore(items);
-    return items[idx];
+export async function updateTicket(id: number | string, patch: Partial<Ticket>): Promise<Ticket | null> {
+    const url = `${getApiBase()}/tickets/${id}`;
+    const res = await fetchWithAuth(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+        if (res.status === 404) return null;
+        throw new Error('Failed to update ticket');
+    }
+    const data = await res.json();
+    return data as Ticket;
 }
 
-export async function deleteTicket(id: string): Promise<boolean> {
-    await new Promise((r) => setTimeout(r, 120));
-    let items = readStore();
-    const prevLen = items.length;
-    items = items.filter((x) => x.id !== id);
-    writeStore(items);
-    return items.length < prevLen;
+export async function deleteTicket(id: number | string): Promise<boolean> {
+    const url = `${getApiBase()}/tickets/${id}`;
+    const res = await fetchWithAuth(url, { method: 'DELETE' });
+    return res.ok;
 }

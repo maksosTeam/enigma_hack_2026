@@ -5,10 +5,10 @@ import TicketTable from '../components/TicketTable';
 import TicketForm from '../components/TicketForm';
 import Modal from '../components/Modal';
 import { createTicket, login } from '../lib/api';
-import { Ticket } from '../types';
+import { Ticket, Priority } from '../types';
 
 // --- Типы для авторизации ---
-type Role = 'admin' | 'operator';
+type Role = 'admin' | 'operator' | 'user';
 type User = { username: string; role: Role };
 
 export default function Page() {
@@ -36,7 +36,7 @@ export default function Page() {
     localStorage.removeItem('support_ai_user');
   };
 
-  const onCreateTicket = useCallback(async (payload: Omit<Ticket, 'id' | 'createdAt'>) => {
+  const onCreateTicket = useCallback(async (payload: { topic: string; description: string; priority: Priority }) => {
     await createTicket(payload);
     setRefreshKey((k) => k + 1);
   }, []);
@@ -138,7 +138,10 @@ function LoginForm({ onLogin }: { onLogin: (u: User) => void }) {
     setError('');
     login(email, password)
       .then((t) => {
-        const role = t.user_role === 'admin' ? 'admin' : 'operator';
+        let role: Role;
+        if (t.user_role === 'admin') role = 'admin';
+        else if (t.user_role === 'operator') role = 'operator';
+        else role = 'user';
         const username = email;
         const u: User = { username, role };
         onLogin(u);

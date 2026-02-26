@@ -2,10 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Ticket } from '../types';
-import { getTickets, updateTicket, deleteTicket } from '../lib/api';
+import { getTickets } from '../lib/api';
 
 type Props = {
-    onSelect?: (t: Ticket) => void;
     refreshKey?: number;
 };
 
@@ -13,10 +12,7 @@ export default function TicketTable({ refreshKey }: Props) {
     const [items, setItems] = useState<Ticket[]>([]);
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-
-    // Состояние для редактирования ответа
-    const [editAnswer, setEditAnswer] = useState('');
+    const [selectedId, setSelectedId] = useState<number | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -33,24 +29,15 @@ export default function TicketTable({ refreshKey }: Props) {
 
     const filtered = useMemo(() => {
         const s = q.toLowerCase();
-        return items.filter(t =>
-            t.subject.toLowerCase().includes(s) ||
-            (t.tags || []).some(tag => tag.toLowerCase().includes(s))
-        );
+        return items.filter(t => t.topic.toLowerCase().includes(s));
     }, [items, q]);
 
-    const handleUpdateAnswer = async (id: string) => {
-        const updated = await updateTicket(id, { generatedAnswer: editAnswer, status: 'resolved' });
-        if (updated) {
-            setItems(prev => prev.map(p => p.id === id ? updated : p));
-            setSelectedId(null);
-        }
-    };
+    // ticket editing/deletion not yet supported by backend
 
     const getPriorityStyle = (p: string) => {
         switch (p) {
             case 'high': return 'bg-red-50 text-red-700 border-red-100';
-            case 'medium': return 'bg-amber-50 text-amber-700 border-amber-100';
+            case 'middle': return 'bg-amber-50 text-amber-700 border-amber-100';
             default: return 'bg-emerald-50 text-emerald-700 border-emerald-100';
         }
     };
@@ -90,14 +77,11 @@ export default function TicketTable({ refreshKey }: Props) {
                             return (
                                 <React.Fragment key={t.id}>
                                     <tr
-                                        onClick={() => {
-                                            setSelectedId(isSelected ? null : t.id);
-                                            setEditAnswer(t.generatedAnswer || '');
-                                        }}
+                                        onClick={() => setSelectedId(isSelected ? null : t.id)}
                                         className={`group hover:bg-blue-50/30 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/50' : ''}`}
                                     >
                                         <td className="px-6 py-4">
-                                            <div className="font-semibold text-gray-900 text-sm">{t.subject}</div>
+                                            <div className="font-semibold text-gray-900 text-sm">{t.topic}</div>
                                             <div className="text-xs text-gray-500 truncate max-w-[300px] mt-0.5">{t.description}</div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -106,10 +90,7 @@ export default function TicketTable({ refreshKey }: Props) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-1.5">
-                                                <div className={`w-1.5 h-1.5 rounded-full ${t.status === 'new' ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'}`} />
-                                                <span className="text-sm text-gray-600 capitalize">{t.status}</span>
-                                            </div>
+                                            <span className="text-sm text-gray-600">{t.awaits_response ? 'Ожидает ответа' : 'Закрыт'}</span>
                                         </td>
                                         <td className="px-6 py-4 text-right text-gray-400 group-hover:text-blue-600 transition-colors">
                                             <svg className={`w-5 h-5 ml-auto transform transition-transform ${isSelected ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
@@ -125,40 +106,13 @@ export default function TicketTable({ refreshKey }: Props) {
                                                         <p className="text-sm text-gray-700 leading-relaxed bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                                                             {t.description || 'Нет описания'}
                                                         </p>
-                                                        <div className="mt-4 flex flex-wrap gap-2">
-                                                            {t.tags?.map(tag => (
-                                                                <span key={tag} className="text-[10px] bg-white px-2 py-1 rounded border border-gray-200 text-gray-500">#{tag}</span>
-                                                            ))}
-                                                        </div>
                                                     </div>
 
-                                                    <div className="flex flex-col">
-                                                        <h4 className="text-[11px] uppercase font-bold text-gray-400 mb-3 tracking-widest">AI Ответ (можно редактировать)</h4>
-                                                        <textarea
-                                                            value={editAnswer}
-                                                            onChange={(e) => setEditAnswer(e.target.value)}
-                                                            className="flex-1 min-h-[120px] p-4 text-sm text-gray-800 bg-white border border-blue-100 rounded-xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 outline-none transition-all shadow-sm"
-                                                        />
-                                                        <div className="flex gap-3 mt-4">
-                                                            <button
-                                                                onClick={() => handleUpdateAnswer(t.id)}
-                                                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-blue-500/20"
-                                                            >
-                                                                Отправить клиенту
-                                                            </button>
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (confirm('Удалить тикет?')) {
-                                                                        await deleteTicket(t.id);
-                                                                        setItems(p => p.filter(x => x.id !== t.id));
-                                                                    }
-                                                                }}
-                                                                className="px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-sm font-medium transition-colors"
-                                                            >
-                                                                Удалить
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                                    <div className="space-y-3">
+                                                    {t.user_email && (
+                                                        <div className="text-xs text-gray-500">От: {t.user_email} ({t.user_role})</div>
+                                                    )}
+                                                </div>
                                                 </div>
                                             </td>
                                         </tr>

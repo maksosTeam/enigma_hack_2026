@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Priority, Ticket } from '../types';
+import { Priority } from '../types';
 
 type Props = {
-    onCreate: (payload: Omit<Ticket, 'id' | 'createdAt'>) => Promise<void>;
+    onCreate: (payload: { topic: string; description: string; priority: Priority }) => Promise<void>;
     onCancel?: () => void;
 };
 
 export default function TicketForm({ onCreate, onCancel }: Props) {
     const [subject, setSubject] = useState('');
     const [description, setDescription] = useState('');
-    const [priority, setPriority] = useState<Priority>('medium');
+    const [priority, setPriority] = useState<Priority>('middle');
     const [loading, setLoading] = useState(false);
 
     async function submit(e?: React.FormEvent) {
@@ -20,11 +20,9 @@ export default function TicketForm({ onCreate, onCancel }: Props) {
         setLoading(true);
         try {
             await onCreate({
-                subject: subject.trim(),
+                topic: subject.trim(),
                 description: description.trim(),
                 priority,
-                status: 'new',
-                generatedAnswer: 'Ответ сгенерированный Агентом',
             });
             setSubject('');
             setDescription('');
@@ -62,14 +60,14 @@ export default function TicketForm({ onCreate, onCancel }: Props) {
                 <div className="flex-1">
                     <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5 ml-1">Приоритет</label>
                     <div className="flex p-1 bg-gray-50 rounded-xl border border-gray-100">
-                        {['low', 'medium', 'high'].map((p) => (
+                        {['low', 'middle', 'high'].map((p) => (
                             <button
                                 key={p}
                                 type="button"
                                 onClick={() => setPriority(p as any)}
                                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${priority === p ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
                             >
-                                {p === 'low' ? 'Низкий' : p === 'medium' ? 'Средний' : 'Высокий'}
+                                {p === 'low' ? 'Низкий' : p === 'middle' ? 'Средний' : 'Высокий'}
                             </button>
                         ))}
                     </div>
