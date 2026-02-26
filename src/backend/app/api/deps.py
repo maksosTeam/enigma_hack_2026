@@ -35,9 +35,10 @@ async def get_ticket_repo(session: AsyncSession = Depends(get_db_session)) -> Ti
     return TicketRepository(session)
 
 async def get_ticket_service(
-    ticket_repo: TicketRepository = Depends(get_ticket_repo)
+    ticket_repo: TicketRepository = Depends(get_ticket_repo),
+    user_repo: UserRepository = Depends(get_user_repo)
 ) -> TicketService:
-    return TicketService(ticket_repo)
+    return TicketService(ticket_repo, user_repo)
 
 async def get_current_user_email(
     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),

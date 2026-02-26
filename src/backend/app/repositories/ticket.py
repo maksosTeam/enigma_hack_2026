@@ -43,3 +43,19 @@ class TicketRepository:
         )
         tickets = result.scalars().all()
         return tickets, total
+
+    async def get_all_tickets(self, skip: int = 0, limit: int = 10) -> Tuple[List[Ticket], int]:
+        """Получает все тикеты с пагинацией"""
+        count_result = await self.session.execute(
+            select(func.count(Ticket.id))
+        )
+        total = count_result.scalar()
+        
+        result = await self.session.execute(
+            select(Ticket)
+            .order_by(Ticket.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        tickets = result.scalars().all()
+        return tickets, total

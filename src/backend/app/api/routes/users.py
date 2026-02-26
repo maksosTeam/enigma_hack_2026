@@ -4,10 +4,10 @@ from app.schemas.user import UserCreate, UserUpdate, UserResponse, UsersListResp
 
 from app.services.user import UserService
 
-from app.api.deps import get_current_user_id, get_user_service
+from app.api.deps import get_current_user_id, get_user_service, get_current_user_role
 
 from app.core.enums import UserRole
-from app.api.deps import get_current_user_role
+
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

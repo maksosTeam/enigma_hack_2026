@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional
-from app.core.enums import TicketPriority
+
+from app.core.enums import TicketPriority, UserRole
 
 class TicketCreate(BaseModel):
     topic: str = Field(..., min_length=3, max_length=255, description="Тема обращения")
@@ -22,4 +22,14 @@ class TicketResponse(BaseModel):
 
 class TicketListResponse(BaseModel):
     tickets: list[TicketResponse]
+    total: int
+
+class TicketResponseWithUser(TicketResponse):
+    """Расширенная схема тикета с информацией о пользователе (для ADMIN/OPERATOR)"""
+    user_email: str
+    user_role: UserRole
+
+class TicketListResponseWithUser(BaseModel):
+    """Расширенный список тикетов с информацией о пользователях"""
+    tickets: list[TicketResponseWithUser]
     total: int
