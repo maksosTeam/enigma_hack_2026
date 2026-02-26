@@ -20,7 +20,7 @@ export default function TicketTable({ refreshKey }: Props) {
             setLoading(true);
             const data = await getTickets();
             if (!mounted) return;
-            setItems(data);
+            setItems(data.tickets);
             setLoading(false);
         };
         load();

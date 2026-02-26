@@ -64,7 +64,7 @@ export function fetchWithAuth(input: RequestInfo, init?: RequestInit) {
     return fetch(input, { ...init, headers });
 }
 
-export async function getTickets(): Promise<Ticket[]> {
+export async function getTickets(): Promise<{tickets: Ticket[]; total: number}> {
     // choose endpoint based on role stored in token
     const token = readToken();
     let url = `${getApiBase()}/tickets`;
@@ -76,8 +76,8 @@ export async function getTickets(): Promise<Ticket[]> {
         throw new Error('Failed to fetch tickets');
     }
     const data = await res.json();
-    // response may be { tickets: [...] }
-    return data.tickets as Ticket[];
+    // response shape: { tickets: [...], total: number }
+    return { tickets: data.tickets as Ticket[], total: data.total };
 }
 
 export async function createTicket(payload: { topic: string; description: string; priority: string; }): Promise<Ticket> {

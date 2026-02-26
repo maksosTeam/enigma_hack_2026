@@ -4,7 +4,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import TicketTable from '../components/TicketTable';
 import TicketForm from '../components/TicketForm';
 import Modal from '../components/Modal';
-import { createTicket, login } from '../lib/api';
+import { createTicket, login, getTickets } from '../lib/api';
 import { Ticket, Priority } from '../types';
 
 // --- Типы для авторизации ---
@@ -18,6 +18,8 @@ export default function Page() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showOperatorModal, setShowOperatorModal] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [awaitCount, setAwaitCount] = useState(0);
 
   // Имитация проверки сессии при загрузке
   useEffect(() => {
@@ -40,6 +42,29 @@ export default function Page() {
     await createTicket(payload);
     setRefreshKey((k) => k + 1);
   }, []);
+
+  // compute statistics when user/refresh changes
+  useEffect(() => {
+    if (!user) {
+      setTotalCount(0);
+      setAwaitCount(0);
+      return;
+    }
+    let mounted = true;
+    const loadStats = async () => {
+      try {
+        const data = await getTickets();
+        if (!mounted) return;
+        setTotalCount(data.total);
+        const awaiting = data.tickets.filter(t => t.awaits_response).length;
+        setAwaitCount(awaiting);
+      } catch (e) {
+        console.error('could not load stats', e);
+      }
+    };
+    loadStats();
+    return () => { mounted = false; };
+  }, [user, refreshKey]);
 
   // Если еще не проверили localStorage, не рендерим ничего (защита от гидратации)
   if (!isInitialized) return null;
@@ -100,8 +125,8 @@ export default function Page() {
 
       <div className="max-w-[1440px] mx-auto px-8 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard label="Всего тикетов" value="128" change="+12%" />
-          <StatCard label="Ожидают ответа" value="14" color="text-blue-600" />
+          <StatCard label="Всего тикетов" value={totalCount.toString()} />
+          <StatCard label="Ожидают ответа" value={awaitCount.toString()} color="text-blue-600" />
           <StatCard label="Операторы в сети" value="4" />
         </div>
 
