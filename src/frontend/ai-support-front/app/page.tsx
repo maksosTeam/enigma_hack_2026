@@ -130,7 +130,12 @@ export default function Page() {
           <StatCard label="Операторы в сети" value="4" />
         </div>
 
-        <TicketTable key={refreshKey} refreshKey={refreshKey} />
+        <TicketTable
+          key={refreshKey}
+          refreshKey={refreshKey}
+          role={user?.role}
+          onTicketUpdated={() => setRefreshKey(k => k + 1)}
+        />
 
         {/* Модалка создания тикета */}
         <Modal open={showTicketModal} title="Создать запрос" onClose={() => setShowTicketModal(false)}>

@@ -110,6 +110,22 @@ export async function updateTicket(id: number | string, patch: Partial<Ticket>):
     return data as Ticket;
 }
 
+// support-staff only: add response text to ticket
+export async function addTicketResponse(id: number | string, response: string): Promise<Ticket> {
+    const url = `${getApiBase()}/tickets/${id}/response`;
+    const res = await fetchWithAuth(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response, awaits_response: false }),
+    });
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Failed to add response');
+    }
+    const data = await res.json();
+    return data as Ticket;
+}
+
 export async function deleteTicket(id: number | string): Promise<boolean> {
     const url = `${getApiBase()}/tickets/${id}`;
     const res = await fetchWithAuth(url, { method: 'DELETE' });

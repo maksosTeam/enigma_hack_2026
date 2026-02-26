@@ -6,6 +6,7 @@ export type Ticket = {
     description: string;
     priority: Priority;
     awaits_response: boolean;
+    response?: string;
     created_at: string; // ISO
     // fields returned only for admin/operator
     user_email?: string;

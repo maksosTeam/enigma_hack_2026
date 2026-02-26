@@ -2,17 +2,20 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Ticket } from '../types';
-import { getTickets } from '../lib/api';
+import { getTickets, addTicketResponse } from '../lib/api';
 
 type Props = {
     refreshKey?: number;
+    role?: string;
+    onTicketUpdated?: () => void;
 };
 
-export default function TicketTable({ refreshKey }: Props) {
+export default function TicketTable({ refreshKey, role, onTicketUpdated }: Props) {
     const [items, setItems] = useState<Ticket[]>([]);
     const [q, setQ] = useState('');
     const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState<number | null>(null);
+    const [editResponse, setEditResponse] = useState('');
 
     useEffect(() => {
         let mounted = true;
@@ -39,6 +42,21 @@ export default function TicketTable({ refreshKey }: Props) {
             case 'high': return 'bg-red-50 text-red-700 border-red-100';
             case 'middle': return 'bg-amber-50 text-amber-700 border-amber-100';
             default: return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+        }
+    };
+
+    const isStaff = role === 'admin' || role === 'operator';
+
+    const handleAddResponse = async (ticket: Ticket) => {
+        if (!editResponse.trim()) return;
+        try {
+            const updated = await addTicketResponse(ticket.id, editResponse.trim());
+            setItems(prev => prev.map(t => t.id === ticket.id ? updated : t));
+            onTicketUpdated?.();
+            setSelectedId(null);
+        } catch (e) {
+            console.error('failed to send response', e);
+            alert('Ошибка при отправке ответа');
         }
     };
 
@@ -77,7 +95,10 @@ export default function TicketTable({ refreshKey }: Props) {
                             return (
                                 <React.Fragment key={t.id}>
                                     <tr
-                                        onClick={() => setSelectedId(isSelected ? null : t.id)}
+                                        onClick={() => {
+                                            setSelectedId(isSelected ? null : t.id);
+                                            setEditResponse(isSelected ? '' : (t.response || ''));
+                                        }}
                                         className={`group hover:bg-blue-50/30 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50/50' : ''}`}
                                     >
                                         <td className="px-6 py-4">
@@ -106,13 +127,40 @@ export default function TicketTable({ refreshKey }: Props) {
                                                         <p className="text-sm text-gray-700 leading-relaxed bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                                                             {t.description || 'Нет описания'}
                                                         </p>
+                                                        {/* show response for normal users */}
+                                                        {!isStaff && t.response && (
+                                                            <div className="mt-4">
+                                                                <h4 className="text-[11px] uppercase font-bold text-gray-400 mb-1 tracking-widest">Ответ поддержки</h4>
+                                                                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                                                    {t.response}
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     <div className="space-y-3">
-                                                    {t.user_email && (
-                                                        <div className="text-xs text-gray-500">От: {t.user_email} ({t.user_role})</div>
-                                                    )}
-                                                </div>
+                                                        {t.user_email && (
+                                                            <div className="text-xs text-gray-500">От: {t.user_email} ({t.user_role})</div>
+                                                        )}
+
+                                                        {isStaff && (
+                                                            <div>
+                                                                <label className="block text-[11px] uppercase font-bold text-gray-400 mb-2 tracking-widest">Ответ поддержки</label>
+                                                                <textarea
+                                                                    value={editResponse}
+                                                                    onChange={(e) => setEditResponse(e.target.value)}
+                                                                    className="w-full p-3 text-sm bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                                                                    rows={4}
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleAddResponse(t)}
+                                                                    className="mt-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md"
+                                                                >
+                                                                    Отправить ответ
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
