@@ -1,6 +1,69 @@
 import { Ticket } from '../types';
 
 const STORAGE_KEY = 'support_tickets_v1';
+const AUTH_STORAGE_KEY = 'support_ai_token';
+
+export type Token = {
+    access_token: string;
+    token_type: string;
+    user_role?: string | null;
+};
+
+function getApiBase() {
+    return process.env.NEXT_PUBLIC_API_URL || '';
+}
+
+export function saveToken(token: Token) {
+    try {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(token));
+    } catch (e) {
+        console.error('saveToken error', e);
+    }
+}
+
+export function readToken(): Token | null {
+    try {
+        const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw) as Token;
+    } catch (e) {
+        console.error('readToken error', e);
+        return null;
+    }
+}
+
+export function removeToken() {
+    try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (e) {
+        console.error('removeToken error', e);
+    }
+}
+
+export async function login(email: string, password: string): Promise<Token> {
+    const url = `${getApiBase()}/auth/login`;
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Login failed');
+    }
+    const data = await res.json();
+    saveToken(data);
+    return data as Token;
+}
+
+export function fetchWithAuth(input: RequestInfo, init?: RequestInit) {
+    const token = readToken();
+    const headers = new Headers(init?.headers as HeadersInit || {});
+    if (token?.access_token && token?.token_type) {
+        headers.set('Authorization', `${token.token_type} ${token.access_token}`);
+    }
+    return fetch(input, { ...init, headers });
+}
 
 function readStore(): Ticket[] {
     try {

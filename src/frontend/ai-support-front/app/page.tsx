@@ -4,7 +4,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import TicketTable from '../components/TicketTable';
 import TicketForm from '../components/TicketForm';
 import Modal from '../components/Modal';
-import { createTicket } from '../lib/api';
+import { createTicket, login } from '../lib/api';
 import { Ticket } from '../types';
 
 // --- Типы для авторизации ---
@@ -129,19 +129,24 @@ export default function Page() {
 
 // --- Компонент Формы Логина ---
 function LoginForm({ onLogin }: { onLogin: (u: User) => void }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'admin') {
-      onLogin({ username: 'admin', role: 'admin' });
-    } else if (username === 'user' && password === 'user') {
-      onLogin({ username: 'Operator_1', role: 'operator' });
-    } else {
-      setError('Неверный логин или пароль');
-    }
+    setError('');
+    login(email, password)
+      .then((t) => {
+        const role = t.user_role === 'admin' ? 'admin' : 'operator';
+        const username = email;
+        const u: User = { username, role };
+        onLogin(u);
+        localStorage.setItem('support_ai_user', JSON.stringify(u));
+      })
+      .catch((err) => {
+        setError(err.message || 'Неверный логин или пароль');
+      });
   };
 
   return (
@@ -163,10 +168,10 @@ function LoginForm({ onLogin }: { onLogin: (u: User) => void }) {
             <label className="block text-[10px] uppercase font-bold text-gray-400 mb-2 ml-1">Логин</label>
             <input
               type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               className="w-full p-3.5 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-              placeholder="admin"
+              placeholder="admin@domain.local"
             />
           </div>
           <div>
