@@ -59,3 +59,17 @@ class TicketRepository:
         )
         tickets = result.scalars().all()
         return tickets, total
+    
+    async def update_response(self, ticket_id: int, response: str, awaits_response: Optional[bool] = None) -> Optional[Ticket]:
+        """Обновляет ответ поддержки и флаг awaits_response"""
+        ticket = await self.get_by_id(ticket_id)
+        if not ticket:
+            return None
+        
+        ticket.response = response
+        if awaits_response is not None:
+            ticket.awaits_response = awaits_response
+        
+        await self.session.commit()
+        await self.session.refresh(ticket)
+        return ticket

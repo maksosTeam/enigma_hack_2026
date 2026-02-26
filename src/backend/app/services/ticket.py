@@ -1,6 +1,7 @@
 from app.repositories.ticket import TicketRepository
 from app.schemas.ticket import (TicketCreate, TicketListResponseWithUser, 
-                                TicketResponse, TicketListResponse, TicketResponseWithUser)
+                                TicketResponse, TicketListResponse, TicketResponseWithUser,
+                                TicketUpdateResponse)
 from typing import Optional
 
 from app.repositories.user import UserRepository
@@ -43,3 +44,14 @@ class TicketService:
             tickets=tickets_with_user,
             total=total
         )
+    
+    async def update_ticket_response(self, ticket_id: int, response_in: TicketUpdateResponse) -> Optional[TicketResponse]:
+        """Добавляет ответ поддержки к тикету"""
+        ticket = await self.ticket_repo.update_response(
+            ticket_id=ticket_id,
+            response=response_in.response,
+            awaits_response=response_in.awaits_response
+        )
+        if ticket:
+            return TicketResponse.model_validate(ticket)
+        return None
